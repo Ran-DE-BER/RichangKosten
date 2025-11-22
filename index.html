@@ -15,70 +15,58 @@
     h2 { margin-bottom: 16px; }
     label { font-size: 14px; margin-top: 4px; display: block; }
 
-    /* 新布局：输入区 + 按钮区 */
+    /* 新布局整体容器 */
     .input-add-container {
         display: flex;
         width: 100%;
-        gap: 10px;
-        margin-bottom: 10px;
+        gap: 12px;
+        margin-bottom: 16px;
+        align-items: center; /* 按钮居中垂直 */
     }
 
+    /* 左侧两行输入框 */
     .input-left {
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
 
-    /* 右侧按钮：占两行高度 */
+    /* 输入框统一美观样式 */
+    input {
+        padding: 12px;
+        font-size: 16px;
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #bbbbbb;
+        box-sizing: border-box;
+    }
+
+    /* 右侧大按钮：浅绿色 + 阴影 */
     .add-button-big {
         width: 120px;
-        background: #006400;
+        height: 106px; /* 两行输入框的高度总和（约） */
+        background: #7ED957; /* 浅绿色 */
         color: white;
         border: none;
         font-size: 18px;
-        border-radius: 10px;
-        padding: 0 10px;
+        border-radius: 12px;
         cursor: pointer;
 
         display: flex;
         align-items: center;
         justify-content: center;
 
-        /* 两行高度 */
-        height: 96px;
+        /* iOS 风格立体感阴影 */
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.25);
     }
 
-    input {
-        padding: 10px;
-        font-size: 15px;
-        width: 100%;
-        box-sizing: border-box;
+    .add-button-big:active {
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.35);
+        transform: translateY(2px);
     }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-        font-size: 13px;
-    }
-
-    table, th, td { border: 1px solid #ccc; }
-    th, td { padding: 6px; text-align: left; }
-
-    .row-new       { background-color: #ffe5e5; }
-    .row-exported  { background-color: #e5ffe5; }
-
-    .delete-button {
-        background: #cc0000; color: white; border: none;
-        padding: 4px 8px; border-radius: 4px; cursor: pointer;
-    }
-    .restore-button {
-        background: #0077ff; color:white; border:none;
-        padding:4px 8px; border-radius:4px; cursor:pointer;
-        margin-left:4px;
-    }
-
+    /* 分类按钮 */
     .category-buttons {
         display: flex;
         flex-wrap: wrap;
@@ -97,16 +85,41 @@
     }
     .category-button.selected { background: #008000; }
 
+    /* 导出按钮 */
     .export-btn {
-        padding: 10px;
-        background: #0033aa;
+        padding: 12px;
+        background: #0044cc;
         color:white;
         border:none;
         width: 100%;
-        border-radius: 6px;
+        border-radius: 8px;
         margin-top: 8px;
-        font-size: 15px;
+        font-size: 16px;
         cursor: pointer;
+    }
+
+    /* 表格 */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 13px;
+    }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 6px; text-align: left; }
+
+    /* 记录颜色 */
+    .row-new       { background-color: #ffe5e5; }
+    .row-exported  { background-color: #e5ffe5; }
+
+    .delete-button {
+        background: #cc0000; color: white; border: none;
+        padding: 4px 8px; border-radius: 4px; cursor: pointer;
+    }
+    .restore-button {
+        background: #0077ff; color:white; border:none;
+        padding:4px 8px; border-radius:4px; cursor:pointer;
+        margin-left:4px;
     }
 </style>
 </head>
@@ -115,10 +128,10 @@
 
 <h2>日常花费（€）</h2>
 
-<!-- 输入 + 添加按钮 一排布局 -->
+<!-- 输入框 + 添加按钮 布局 -->
 <div class="input-add-container">
 
-    <!-- 左侧 日期 + 金额 -->
+    <!-- 左侧 -->
     <div class="input-left">
 
         <label>日期：</label>
@@ -129,7 +142,7 @@
 
     </div>
 
-    <!-- 右侧大按钮 -->
+    <!-- 右侧 添加记录按钮 -->
     <button class="add-button-big" onclick="addRecord()">添加记录</button>
 
 </div>
@@ -161,175 +174,137 @@
 </table>
 
 <script>
+/* —— 数据逻辑与原来完全一致 —— */
 const STORAGE_KEY = "cash_records_simple_v4";
-
 let storageOK = true;
-try { localStorage.setItem("__test__", "1"); localStorage.removeItem("__test__"); }
-catch(e){ storageOK = false; }
+try{ localStorage.setItem("_t","1"); localStorage.removeItem("_t"); }catch(e){ storageOK=false; }
 
 let memoryStore = [];
 let selectedCategory = "";
 
-function setToday(){
-    const t = new Date().toISOString().slice(0,10);
-    if (!date.value) date.value = t;
-}
+function setToday(){ const t=new Date().toISOString().slice(0,10); if(!date.value) date.value=t; }
+function formatDE(iso){ const p=iso.split("-"); return `${p[2]}-${p[1]}-${p[0]}`; }
 
-function formatDE(iso){
-    const p = iso.split("-");
-    return `${p[2]}-${p[1]}-${p[0]}`;
-}
+function loadRecords(){ if(!storageOK) return memoryStore; try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}catch(e){return memoryStore;} }
+function saveRecords(list){ if(!storageOK) memoryStore=list; else localStorage.setItem(STORAGE_KEY,JSON.stringify(list)); }
 
-function loadRecords(){
-    if (!storageOK) return memoryStore;
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-    catch(e){ return memoryStore; }
-}
-
-function saveRecords(list){
-    if (!storageOK){ memoryStore = list; return; }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
-
-// 分类按钮
 function initCategoryButtons(){
     document.querySelectorAll(".category-button").forEach(btn=>{
-        btn.onclick = ()=>{
-            selectedCategory = (selectedCategory === btn.dataset.category ? "" : btn.dataset.category);
+        btn.onclick=()=>{
+            selectedCategory = (selectedCategory===btn.dataset.category?"":btn.dataset.category);
             updateCategoryStyles();
         };
     });
 }
 function updateCategoryStyles(){
     document.querySelectorAll(".category-button").forEach(btn=>{
-        btn.classList.toggle("selected", btn.dataset.category === selectedCategory);
+        btn.classList.toggle("selected",btn.dataset.category===selectedCategory);
     });
 }
 
-// 添加记录
 function addRecord(){
-    const d = date.value;
-    const a = amount.value.replace(",",".");
-    if (!d) return alert("请选择日期");
-    if (!a) return alert("请输入金额");
+    const d=date.value;
+    const a=amount.value.replace(",",".");
+    if(!d) return alert("请选择日期");
+    if(!a) return alert("请输入金额");
+    const num=parseFloat(a);
+    if(isNaN(num)) return alert("金额格式错误，例如 12,50");
 
-    const num = parseFloat(a);
-    if (isNaN(num)) return alert("金额格式错误，例如 12,50");
-
-    const rec = {
-        isoDate: d,
-        amount: -Math.abs(num),
-        category: selectedCategory || "未分类",
-        exported: false
+    const rec={
+        isoDate:d,
+        amount:-Math.abs(num),
+        category:selectedCategory||"未分类",
+        exported:false
     };
 
-    const list = loadRecords();
+    const list=loadRecords();
     list.unshift(rec);
     saveRecords(list);
-    amount.value = "";
+    amount.value="";
     render();
 }
 
-// 删除记录
 function deleteRecord(i){
-    const list = loadRecords();
+    const list=loadRecords();
     list.splice(i,1);
     saveRecords(list);
     render();
 }
 
-// 恢复记录（已导出 → 未导出）
 function restoreRecord(i){
-    const list = loadRecords();
-    list[i].exported = false;
+    const list=loadRecords();
+    list[i].exported=false;
     saveRecords(list);
     render();
 }
 
-// 渲染
 function render(){
-    const list = loadRecords();
-    const tbody = document.querySelector("#recordsTable tbody");
-    tbody.innerHTML = "";
+    const list=loadRecords();
+    const tbody=document.querySelector("#recordsTable tbody");
+    tbody.innerHTML="";
 
     list.forEach((r,i)=>{
-        const tr = document.createElement("tr");
-        tr.className = r.exported ? "row-exported" : "row-new";
+        const tr=document.createElement("tr");
+        tr.className=r.exported?"row-exported":"row-new";
 
-        let op = `<button class="delete-button">删除</button>`;
-        if (r.exported){
-            op += ` <button class="restore-button">恢复</button>`;
-        }
+        let op=`<button class="delete-button">删除</button>`;
+        if(r.exported) op+=` <button class="restore-button">恢复</button>`;
 
-        tr.innerHTML = `
+        tr.innerHTML=`
             <td>${formatDE(r.isoDate)}</td>
             <td>${r.amount.toFixed(2)}</td>
             <td>${r.category}</td>
-            <td>${r.exported ? "已导出" : "未导出"}</td>
+            <td>${r.exported?"已导出":"未导出"}</td>
             <td>${op}</td>
         `;
 
-        tr.querySelector(".delete-button").onclick = ()=>deleteRecord(i);
-        if (r.exported){
-            tr.querySelector(".restore-button").onclick = ()=>restoreRecord(i);
+        tr.querySelector(".delete-button").onclick=()=>deleteRecord(i);
+        if(r.exported){
+            tr.querySelector(".restore-button").onclick=()=>restoreRecord(i);
         }
 
         tbody.appendChild(tr);
     });
 }
 
-// 导出（仅未导出）
 function exportCSV(){
-    const list = loadRecords();
-    const newOnes = list.filter(r=>!r.exported);
+    const list=loadRecords();
+    const newOnes=list.filter(r=>!r.exported);
+    if(newOnes.length===0) return alert("没有新的记录需要导出。");
 
-    if (newOnes.length === 0){
-        alert("没有新的记录需要导出。");
-        return;
-    }
-
-    let csv = "日期,月份,金额,分类\n";
+    let csv="日期,月份,金额,分类\n";
     newOnes.forEach(r=>{
-        const g = formatDE(r.isoDate);
-        const m = parseInt(r.isoDate.split("-")[1],10);
-        csv += `"${g}","${m}","${r.amount}","${r.category}"\n`;
+        const g=formatDE(r.isoDate);
+        const m=parseInt(r.isoDate.split("-")[1],10);
+        csv+=`"${g}","${m}","${r.amount}","${r.category}"\n`;
     });
 
-    const blob = new Blob([csv], {type:"text/csv"});
+    const blob=new Blob([csv],{type:"text/csv"});
 
-    if (navigator.share){
-        const file = new File([blob], "cash_records.csv", {type:"text/csv"});
-        navigator.share({
-            title:"日常花费记录",
-            files:[file]
-        }).then(()=>{
-            // 导出成功 → 标记为已导出
-            list.forEach(r=>{ if (!r.exported) r.exported = true; });
+    if(navigator.share){
+        const file=new File([blob],"cash_records.csv",{type:"text/csv"});
+        navigator.share({title:"日常花费记录",files:[file]})
+        .then(()=>{
+            list.forEach(r=>{ if(!r.exported) r.exported=true; });
             saveRecords(list);
             render();
-        }).catch(()=>{
-            fallback(blob, list);
-        });
-
-    } else fallback(blob, list);
+        })
+        .catch(()=>fallback(blob,list));
+    } else fallback(blob,list);
 }
 
 function fallback(blob,list){
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "cash_records.csv";
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url; a.download="cash_records.csv";
     a.click();
-
     list.forEach(r=>{ if(!r.exported) r.exported=true; });
     saveRecords(list);
     render();
 }
 
 window.addEventListener("DOMContentLoaded",()=>{
-    setToday();
-    initCategoryButtons();
-    render();
+    setToday(); initCategoryButtons(); render();
 });
 </script>
 
