@@ -12,45 +12,102 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         margin: 16px;
     }
-    h2 { margin-bottom: 10px; }
-    label { font-size: 14px; margin-top: 8px; display: block; }
-    input, button {
-        padding: 8px;
-        margin-top: 4px;
+    h2 { margin-bottom: 16px; }
+    label { font-size: 14px; margin-top: 4px; display: block; }
+
+    /* 新布局：输入区 + 按钮区 */
+    .input-add-container {
+        display: flex;
+        width: 100%;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .input-left {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* 右侧按钮：占两行高度 */
+    .add-button-big {
+        width: 120px;
+        background: #006400;
+        color: white;
+        border: none;
+        font-size: 18px;
+        border-radius: 10px;
+        padding: 0 10px;
+        cursor: pointer;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        /* 两行高度 */
+        height: 96px;
+    }
+
+    input {
+        padding: 10px;
+        font-size: 15px;
         width: 100%;
         box-sizing: border-box;
-        font-size: 14px;
     }
+
     table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 15px;
         font-size: 13px;
     }
+
     table, th, td { border: 1px solid #ccc; }
     th, td { padding: 6px; text-align: left; }
 
-    /* 新增：记录颜色 */
-    .row-new       { background-color: #ffe5e5; }  /* 浅红 */
-    .row-exported  { background-color: #e5ffe5; }  /* 浅绿 */
+    .row-new       { background-color: #ffe5e5; }
+    .row-exported  { background-color: #e5ffe5; }
 
     .delete-button {
         background: #cc0000; color: white; border: none;
         padding: 4px 8px; border-radius: 4px; cursor: pointer;
     }
     .restore-button {
-        background: #0080ff; color:white; border:none;
+        background: #0077ff; color:white; border:none;
         padding:4px 8px; border-radius:4px; cursor:pointer;
         margin-left:4px;
     }
+
     .category-buttons {
-        display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+        margin-bottom: 12px;
     }
     .category-button {
-        flex: 0 0 auto; padding: 6px 10px; border-radius: 6px; border: none;
-        background: #cc0000; color: white; font-size: 13px; cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: none;
+        background: #cc0000;
+        color: white;
+        font-size: 13px;
+        cursor: pointer;
     }
     .category-button.selected { background: #008000; }
+
+    .export-btn {
+        padding: 10px;
+        background: #0033aa;
+        color:white;
+        border:none;
+        width: 100%;
+        border-radius: 6px;
+        margin-top: 8px;
+        font-size: 15px;
+        cursor: pointer;
+    }
 </style>
 </head>
 
@@ -58,11 +115,24 @@
 
 <h2>日常花费（€）</h2>
 
-<label>日期：</label>
-<input type="date" id="date">
+<!-- 输入 + 添加按钮 一排布局 -->
+<div class="input-add-container">
 
-<label>金额（欧元，例如 12,50）：</label>
-<input type="text" id="amount" inputmode="decimal" placeholder="例如：12,50">
+    <!-- 左侧 日期 + 金额 -->
+    <div class="input-left">
+
+        <label>日期：</label>
+        <input type="date" id="date">
+
+        <label>金额：</label>
+        <input type="text" id="amount" inputmode="decimal" placeholder="例如：12,50">
+
+    </div>
+
+    <!-- 右侧大按钮 -->
+    <button class="add-button-big" onclick="addRecord()">添加记录</button>
+
+</div>
 
 <label>费用分类：</label>
 <div id="categoryButtons" class="category-buttons">
@@ -75,8 +145,7 @@
     <button type="button" class="category-button" data-category="花费-乐乐学习">花费-乐乐学习</button>
 </div>
 
-<button type="button" onclick="addRecord()">添加记录</button>
-<button type="button" onclick="exportCSV()">导出 CSV（仅导出未导出的记录）</button>
+<button class="export-btn" onclick="exportCSV()">导出 CSV（仅导出未导出的记录）</button>
 
 <table id="recordsTable">
     <thead>
@@ -92,17 +161,16 @@
 </table>
 
 <script>
-const STORAGE_KEY = "cash_records_simple_v3";
+const STORAGE_KEY = "cash_records_simple_v4";
 
 let storageOK = true;
-try { localStorage.setItem("__t2__", "1"); localStorage.removeItem("__t2__"); }
+try { localStorage.setItem("__test__", "1"); localStorage.removeItem("__test__"); }
 catch(e){ storageOK = false; }
 
 let memoryStore = [];
 let selectedCategory = "";
 
-// 工具函数
-function setToday() {
+function setToday(){
     const t = new Date().toISOString().slice(0,10);
     if (!date.value) date.value = t;
 }
@@ -146,7 +214,7 @@ function addRecord(){
     if (!a) return alert("请输入金额");
 
     const num = parseFloat(a);
-    if (isNaN(num)) return alert("格式错误，例如 12,50");
+    if (isNaN(num)) return alert("金额格式错误，例如 12,50");
 
     const rec = {
         isoDate: d,
@@ -158,7 +226,6 @@ function addRecord(){
     const list = loadRecords();
     list.unshift(rec);
     saveRecords(list);
-
     amount.value = "";
     render();
 }
@@ -171,7 +238,7 @@ function deleteRecord(i){
     render();
 }
 
-// 恢复为未导出
+// 恢复记录（已导出 → 未导出）
 function restoreRecord(i){
     const list = loadRecords();
     list[i].exported = false;
@@ -179,7 +246,7 @@ function restoreRecord(i){
     render();
 }
 
-// 渲染表格
+// 渲染
 function render(){
     const list = loadRecords();
     const tbody = document.querySelector("#recordsTable tbody");
@@ -198,7 +265,7 @@ function render(){
             <td>${formatDE(r.isoDate)}</td>
             <td>${r.amount.toFixed(2)}</td>
             <td>${r.category}</td>
-            <td>${r.exported?"已导出":"未导出"}</td>
+            <td>${r.exported ? "已导出" : "未导出"}</td>
             <td>${op}</td>
         `;
 
@@ -214,15 +281,15 @@ function render(){
 // 导出（仅未导出）
 function exportCSV(){
     const list = loadRecords();
-    const newOnly = list.filter(r=>!r.exported);
+    const newOnes = list.filter(r=>!r.exported);
 
-    if (newOnly.length === 0){
+    if (newOnes.length === 0){
         alert("没有新的记录需要导出。");
         return;
     }
 
     let csv = "日期,月份,金额,分类\n";
-    newOnly.forEach(r=>{
+    newOnes.forEach(r=>{
         const g = formatDE(r.isoDate);
         const m = parseInt(r.isoDate.split("-")[1],10);
         csv += `"${g}","${m}","${r.amount}","${r.category}"\n`;
@@ -237,34 +304,34 @@ function exportCSV(){
             files:[file]
         }).then(()=>{
             // 导出成功 → 标记为已导出
-            list.forEach(r=>{ if(!r.exported) r.exported = true; });
+            list.forEach(r=>{ if (!r.exported) r.exported = true; });
             saveRecords(list);
             render();
-        }).catch(e=>{
-            fallbackDownload(blob,list);
+        }).catch(()=>{
+            fallback(blob, list);
         });
 
-    } else fallbackDownload(blob,list);
+    } else fallback(blob, list);
 }
 
-function fallbackDownload(blob,list){
+function fallback(blob,list){
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download="cash_records.csv";
+    a.href = url;
+    a.download = "cash_records.csv";
     a.click();
 
-    // 同样标记为已导出
     list.forEach(r=>{ if(!r.exported) r.exported=true; });
     saveRecords(list);
     render();
 }
 
-// 初始化
 window.addEventListener("DOMContentLoaded",()=>{
     setToday();
     initCategoryButtons();
     render();
 });
 </script>
+
 </body>
 </html>
