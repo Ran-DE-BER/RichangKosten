@@ -118,4 +118,242 @@ try {
     localStorage.setItem("__test__", "1");
     localStorage.removeItem("__test__");
 } catch (e) {
-    st
+    storageAvailable = false;
+    console.log("localStorage 不可用，改用内存存储：", e);
+}
+
+// localStorage 不可用时，使用内存数组保存（仅本次打开有效）
+let inMemoryRecords = [];
+
+// 当前选中的费用分类
+let selectedCategory = "";
+
+// ===================== 工具函数 =====================
+
+// 设置日期默认值为今天（input 需要 yyyy-MM-dd）
+function setToday() {
+    const today = new Date().toISOString().slice(0, 10);
+    const dateInput = document.getElementById("date");
+    if (dateInput && !dateInput.value) {
+        dateInput.value = today;
+    }
+}
+
+// ISO 日期(yyyy-MM-dd) 转成德国格式 dd-MM-yyyy
+function formatGermanDate(isoDate) {
+    const parts = isoDate.split("-");
+    if (parts.length !== 3) return isoDate;
+    return parts[2] + "-" + parts[1] + "-" + parts[0];
+}
+
+// 从存储加载记录
+function loadRecords() {
+    if (!storageAvailable) {
+        return inMemoryRecords;
+    }
+    try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch (e) {
+        console.log("读取 localStorage 出错，改用内存：", e);
+        storageAvailable = false;
+        return inMemoryRecords;
+    }
+}
+
+// 保存记录到存储
+function saveRecords(records) {
+    if (!storageAvailable) {
+        inMemoryRecords = records;
+        return;
+    }
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    } catch (e) {
+        console.log("写入 localStorage 出错，改用内存：", e);
+        storageAvailable = false;
+        inMemoryRecords = records;
+    }
+}
+
+// ===================== 分类按钮 =====================
+
+function initCategoryButtons() {
+    const buttons = document.querySelectorAll(".category-button");
+    buttons.forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            const category = this.getAttribute("data-category");
+            if (selectedCategory === category) {
+                // 再点一次，取消选择
+                selectedCategory = "";
+            } else {
+                selectedCategory = category;
+            }
+            updateCategoryButtonStyles();
+        });
+    });
+}
+
+function updateCategoryButtonStyles() {
+    const buttons = document.querySelectorAll(".category-button");
+    buttons.forEach(function(btn) {
+        const category = btn.getAttribute("data-category");
+        if (category === selectedCategory) {
+            btn.classList.add("selected");
+        } else {
+            btn.classList.remove("selected");
+        }
+    });
+}
+
+// ===================== 主功能：添加 / 删除 / 渲染 =====================
+
+// 添加记录
+function addRecord() {
+    const dateInput = document.getElementById("date");
+    const amountInput = document.getElementById("amount");
+
+    if (!dateInput || !amountInput) {
+        alert("页面还没加载好，请刷新后重试");
+        return;
+    }
+
+    const isoDate = dateInput.value; // yyyy-MM-dd
+    const amountRaw = amountInput.value;
+
+    if (!isoDate) {
+        alert("请选择日期");
+        return;
+    }
+
+    if (!amountRaw) {
+        alert("请填写金额");
+        return;
+    }
+
+    // 兼容逗号和点（12,50 或 12.50）
+    const normalized = amountRaw.replace(",", ".");
+    const amountNumber = parseFloat(normalized);
+    if (isNaN(amountNumber)) {
+        alert("请填写正确的金额（数字），例如 12,50");
+        return;
+    }
+
+    const category = selectedCategory || "未分类";
+    const amount = -Math.abs(amountNumber); // 统一存为负数
+
+    const records = loadRecords();
+    records.unshift({
+        isoDate: isoDate,
+        amount: amount,
+        category: category
+    });
+    saveRecords(records);
+
+    render();
+
+    // 清空金额输入（日期和分类保持）
+    amountInput.value = "";
+}
+
+// 删除记录（根据 index）
+function deleteRecord(index) {
+    const records = loadRecords();
+    if (index < 0 || index >= records.length) return;
+    records.splice(index, 1);
+    saveRecords(records);
+    render();
+}
+
+// 渲染表格
+function render() {
+    const records = loadRecords();
+    const tbody = document.querySelector("#recordsTable tbody");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+
+    for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        const tr = document.createElement("tr");
+
+        // 日期
+        const tdDate = document.createElement("td");
+        tdDate.textContent = formatGermanDate(r.isoDate);
+        tr.appendChild(tdDate);
+
+        // 金额
+        const tdAmount = document.createElement("td");
+        tdAmount.textContent = r.amount.toFixed(2);
+        tr.appendChild(tdAmount);
+
+        // 分类
+        const tdCategory = document.createElement("td");
+        tdCategory.textContent = r.category;
+        tr.appendChild(tdCategory);
+
+        // 删除按钮
+        const tdDel = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.textContent = "删除";
+        btn.className = "delete-button";
+        btn.onclick = (function(idx) {
+            return function() {
+                deleteRecord(idx);
+            };
+        })(i);
+        tdDel.appendChild(btn);
+        tr.appendChild(tdDel);
+
+        tbody.appendChild(tr);
+    }
+}
+
+// ===================== 导出 CSV =====================
+
+// 导出 CSV：日期 / 月份(数字) / 金额 / 花费种类
+function exportCSV() {
+    const records = loadRecords();
+    if (records.length === 0) {
+        alert("没有记录可以导出！");
+        return;
+    }
+
+    let csv = "日期,月份,金额 (€),花费种类\n";
+
+    for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        const germanDate = formatGermanDate(r.isoDate);  // dd-MM-yyyy
+        const parts = r.isoDate.split("-");              // [yyyy, MM, dd]
+        let month = "";
+        if (parts.length === 3) {
+            month = String(parseInt(parts[1], 10)); // 去掉前导 0，例如 "01" → "1"
+        }
+
+        const categorySafe = String(r.category).replace(/"/g, '""');
+
+        csv += "\"" + germanDate + "\"," +
+               "\"" + month + "\"," +
+               "\"" + r.amount + "\"," +
+               "\"" + categorySafe + "\"\n";
+    }
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "cash_records.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// ===================== 初始化 =====================
+window.addEventListener("DOMContentLoaded", function() {
+    setToday();
+    initCategoryButtons();
+    render();
+});
+</script>
+
+</body>
+</html>
