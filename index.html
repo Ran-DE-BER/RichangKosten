@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>日常花费</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <style>
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
@@ -17,7 +19,7 @@
         margin-top: 8px;
         display: block;
     }
-    input, button, datalist {
+    input, button {
         padding: 8px;
         margin-top: 4px;
         width: 100%;
@@ -40,6 +42,33 @@
         padding: 6px;
         text-align: left;
     }
+    .delete-button {
+        background: #cc0000;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .category-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 4px;
+    }
+    .category-button {
+        flex: 0 0 auto;
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: none;
+        background: #cc0000;  /* 未选择：红色 */
+        color: white;
+        font-size: 13px;
+        cursor: pointer;
+    }
+    .category-button.selected {
+        background: #008000;  /* 已选择：绿色 */
+    }
 </style>
 </head>
 
@@ -50,15 +79,19 @@
 <label>日期：</label>
 <input type="date" id="date">
 
-<label>金额（欧元，输入正数即可）：</label>
-<input type="number" id="amount" step="0.01" placeholder="例如：12.50">
+<label>金额（欧元，使用逗号作为小数点，例如：12,50）：</label>
+<input type="text" id="amount" placeholder="例如：12,50">
 
 <label>费用分类：</label>
-<input list="categoryList" id="category" placeholder="例如：花费-外出吃饭">
-<datalist id="categoryList">
-    <option value="花费-外出吃饭">
-    <option value="花费-超市买菜">
-</datalist>
+<div id="categoryButtons" class="category-buttons">
+    <button type="button" class="category-button" data-category="花费-外出吃饭">花费-外出吃饭</button>
+    <button type="button" class="category-button" data-category="花费-超市买菜">花费-超市买菜</button>
+    <button type="button" class="category-button" data-category="花费-日常用品">花费-日常用品</button>
+    <button type="button" class="category-button" data-category="花费-电器家具">花费-电器家具</button>
+    <button type="button" class="category-button" data-category="花费-衣服购物">花费-衣服购物</button>
+    <button type="button" class="category-button" data-category="花费-交通出行">花费-交通出行</button>
+    <button type="button" class="category-button" data-category="花费-乐乐学习">花费-乐乐学习</button>
+</div>
 
 <button onclick="addRecord()">添加记录</button>
 <button onclick="exportCSV()">导出为 Excel (CSV)</button>
@@ -76,211 +109,13 @@
 </table>
 
 <script>
-// 本地存储 key
+// ===================== 基本设置 =====================
 const STORAGE_KEY = "cash_records_simple";
 
-// 检测 localStorage 是否可用（iPhone 本地 file:// 下可能会报错）
+// 检测 localStorage 是否可用
 let storageAvailable = true;
 try {
     localStorage.setItem("__test__", "1");
     localStorage.removeItem("__test__");
 } catch (e) {
-    storageAvailable = false;
-    console.log("localStorage 不可用，改用内存存储：", e);
-}
-
-// 如果 localStorage 不可用，就用这个数组在当前会话里保存
-let inMemoryRecords = [];
-
-// 设置日期默认值为今天（input 需要 yyyy-MM-dd）
-function setToday() {
-    const today = new Date().toISOString().slice(0, 10);
-    const dateInput = document.getElementById("date");
-    if (dateInput && !dateInput.value) {
-        dateInput.value = today;
-    }
-}
-
-// ISO 日期(yyyy-MM-dd) 转成德国格式 dd-MM-yyyy
-function formatGermanDate(isoDate) {
-    const parts = isoDate.split("-");
-    if (parts.length !== 3) return isoDate;
-    return parts[2] + "-" + parts[1] + "-" + parts[0];
-}
-
-// 加载记录
-function loadRecords() {
-    if (!storageAvailable) {
-        return inMemoryRecords;
-    }
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-}
-
-// 保存记录
-function saveRecords(records) {
-    if (!storageAvailable) {
-        inMemoryRecords = records;
-        return;
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-}
-
-// 确保分类出现在 datalist 中
-function ensureCategoryInList(category) {
-    const dataList = document.getElementById("categoryList");
-    if (!dataList) return;
-
-    const values = [];
-    for (let i = 0; i < dataList.options.length; i++) {
-        values.push(dataList.options[i].value);
-    }
-    if (category && values.indexOf(category) === -1) {
-{
-        const opt = document.createElement("option");
-        opt.value = category;
-        dataList.appendChild(opt);
-    }
-}
-
-// 添加记录
-function addRecord() {
-    const dateInput = document.getElementById("date");
-    const amountInput = document.getElementById("amount");
-    const categoryInput = document.getElementById("category");
-
-    if (!dateInput || !amountInput || !categoryInput) {
-        alert("页面还没加载好，请刷新后重试");
-        return;
-    }
-
-    const isoDate = dateInput.value; // yyyy-MM-dd
-    const amountRaw = amountInput.value;
-    const categoryRaw = categoryInput.value.trim();
-
-    if (!isoDate) {
-        alert("请选择日期");
-        return;
-    }
-
-    // 兼容逗号和点
-    const normalized = amountRaw.replace(",", ".");
-    const amountNumber = parseFloat(normalized);
-    if (isNaN(amountNumber)) {
-        alert("请填写正确的金额（数字）");
-        return;
-    }
-
-    const category = categoryRaw || "未分类";
-    const amount = -Math.abs(amountNumber); // 统一存为负数
-
-    const records = loadRecords();
-    records.unshift({
-        isoDate: isoDate,
-        amount: amount,
-        category: category
-    });
-    saveRecords(records);
-
-    ensureCategoryInList(category);
-    render();
-
-    // 清空金额
-    amountInput.value = "";
-}
-
-// 删除记录（根据 index）
-function deleteRecord(index) {
-    const records = loadRecords();
-    records.splice(index, 1);
-    saveRecords(records);
-    render();
-}
-
-// 渲染表格
-function render() {
-    const records = loadRecords();
-    const tbody = document.querySelector("#recordsTable tbody");
-    if (!tbody) return;
-
-    tbody.innerHTML = "";
-
-    for (let i = 0; i < records.length; i++) {
-        const r = records[i];
-        const tr = document.createElement("tr");
-
-        const tdDate = document.createElement("td");
-        tdDate.textContent = formatGermanDate(r.isoDate);
-        tr.appendChild(tdDate);
-
-        const tdAmount = document.createElement("td");
-        tdAmount.textContent = r.amount.toFixed(2);
-        tr.appendChild(tdAmount);
-
-        const tdCategory = document.createElement("td");
-        tdCategory.textContent = r.category;
-        tr.appendChild(tdCategory);
-
-        // 删除按钮
-        const tdDel = document.createElement("td");
-        const btn = document.createElement("button");
-        btn.textContent = "删除";
-        btn.style.background = "#cc0000";
-        btn.style.color = "white";
-        btn.style.border = "none";
-        btn.style.padding = "4px 8px";
-        btn.style.borderRadius = "4px";
-        btn.style.cursor = "pointer";
-        btn.onclick = function () {
-            deleteRecord(i);
-        };
-        tdDel.appendChild(btn);
-        tr.appendChild(tdDel);
-
-        tbody.appendChild(tr);
-    }
-}
-
-// 导出 CSV：日期 / 月份(数字) / 金额 / 花费种类
-function exportCSV() {
-    const records = loadRecords();
-    if (records.length === 0) {
-        alert("没有记录可以导出！");
-        return;
-    }
-
-    let csv = "日期,月份,金额 (€),花费种类\n";
-
-    for (let i = 0; i < records.length; i++) {
-        const r = records[i];
-        const germanDate = formatGermanDate(r.isoDate);  // dd-MM-yyyy
-        const parts = r.isoDate.split("-");              // [yyyy, MM, dd]
-        let month = "";
-        if (parts.length === 3) {
-            month = String(parseInt(parts[1], 10)); // 去掉前导 0，例如 "01" → "1"
-        }
-
-        const categorySafe = String(r.category).replace(/"/g, '""');
-
-        csv += "\"" + germanDate + "\"," +
-               "\"" + month + "\"," +
-               "\"" + r.amount + "\"," +
-               "\"" + categorySafe + "\"\n";
-    }
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "cash_records.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// 初始化
-setToday();
-render();
-</script>
-
-</body>
-</html>
+    st
