@@ -11,14 +11,8 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         margin: 16px;
     }
-    h2 {
-        margin-bottom: 10px;
-    }
-    label {
-        font-size: 14px;
-        margin-top: 8px;
-        display: block;
-    }
+    h2 { margin-bottom: 10px; }
+    label { font-size: 14px; margin-top: 8px; display: block; }
     input, button {
         padding: 8px;
         margin-top: 4px;
@@ -26,49 +20,26 @@
         box-sizing: border-box;
         font-size: 14px;
     }
-    button {
-        margin-top: 10px;
-    }
     table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 15px;
         font-size: 13px;
     }
-    table, th, td {
-        border: 1px solid #ccc;
-    }
-    th, td {
-        padding: 6px;
-        text-align: left;
-    }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 6px; text-align: left; }
     .delete-button {
-        background: #cc0000;
-        color: white;
-        border: none;
-        padding: 4px 8px;
-        border-radius: 4px;
-        cursor: pointer;
+        background: #cc0000; color: white; border: none;
+        padding: 4px 8px; border-radius: 4px; cursor: pointer;
     }
     .category-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 4px;
+        display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
     }
     .category-button {
-        flex: 0 0 auto;
-        padding: 6px 10px;
-        border-radius: 6px;
-        border: none;
-        background: #cc0000;  /* 未选择：红色 */
-        color: white;
-        font-size: 13px;
-        cursor: pointer;
+        flex: 0 0 auto; padding: 6px 10px; border-radius: 6px; border: none;
+        background: #cc0000; color: white; font-size: 13px; cursor: pointer;
     }
-    .category-button.selected {
-        background: #008000;  /* 已选择：绿色 */
-    }
+    .category-button.selected { background: #008000; }
 </style>
 </head>
 
@@ -93,8 +64,8 @@
     <button type="button" class="category-button" data-category="花费-乐乐学习">花费-乐乐学习</button>
 </div>
 
-<button onclick="addRecord()">添加记录</button>
-<button onclick="exportCSV()">导出为 Excel (CSV)</button>
+<button type="button" onclick="addRecord()">添加记录</button>
+<button type="button" onclick="exportCSV()">导出 CSV（分享 / 保存）</button>
 
 <table id="recordsTable">
     <thead>
@@ -109,209 +80,107 @@
 </table>
 
 <script>
-// ===================== 基本设置 =====================
+// ===================== 保存设置 =====================
 const STORAGE_KEY = "cash_records_simple";
 
-// 检测 localStorage 是否可用
 let storageAvailable = true;
-try {
-    localStorage.setItem("__test__", "1");
-    localStorage.removeItem("__test__");
-} catch (e) {
-    storageAvailable = false;
-    console.log("localStorage 不可用，改用内存存储：", e);
-}
+try { localStorage.setItem("__test__", "1"); localStorage.removeItem("__test__"); }
+catch(e){ storageAvailable = false; }
 
-// localStorage 不可用时，使用内存数组保存（仅本次打开有效）
 let inMemoryRecords = [];
 
-// 当前选中的费用分类
 let selectedCategory = "";
 
-// ===================== 工具函数 =====================
-
-// 设置日期默认值为今天（input 需要 yyyy-MM-dd）
+// ===================== 工具 =====================
 function setToday() {
-    const today = new Date().toISOString().slice(0, 10);
-    const dateInput = document.getElementById("date");
-    if (dateInput && !dateInput.value) {
-        dateInput.value = today;
-    }
+    const t = new Date().toISOString().slice(0, 10);
+    const d = document.getElementById("date");
+    if (d && !d.value) d.value = t;
 }
 
-// ISO 日期(yyyy-MM-dd) 转成德国格式 dd-MM-yyyy
-function formatGermanDate(isoDate) {
-    const parts = isoDate.split("-");
-    if (parts.length !== 3) return isoDate;
-    return parts[2] + "-" + parts[1] + "-" + parts[0];
+function formatGermanDate(iso) {
+    const p = iso.split("-");
+    if (p.length !== 3) return iso;
+    return `${p[2]}-${p[1]}-${p[0]}`;
 }
 
-// 从存储加载记录
 function loadRecords() {
-    if (!storageAvailable) {
-        return inMemoryRecords;
-    }
-    try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
-    } catch (e) {
-        console.log("读取 localStorage 出错，改用内存：", e);
-        storageAvailable = false;
-        return inMemoryRecords;
-    }
+    if (!storageAvailable) return inMemoryRecords;
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+    catch(e){ return inMemoryRecords; }
 }
 
-// 保存记录到存储
-function saveRecords(records) {
-    if (!storageAvailable) {
-        inMemoryRecords = records;
-        return;
-    }
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-    } catch (e) {
-        console.log("写入 localStorage 出错，改用内存：", e);
-        storageAvailable = false;
-        inMemoryRecords = records;
-    }
+function saveRecords(r) {
+    if (!storageAvailable) { inMemoryRecords = r; return; }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(r)); }
+    catch(e){ inMemoryRecords = r; }
 }
 
 // ===================== 分类按钮 =====================
-
 function initCategoryButtons() {
-    const buttons = document.querySelectorAll(".category-button");
-    buttons.forEach(function(btn) {
-        btn.addEventListener("click", function() {
-            const category = this.getAttribute("data-category");
-            if (selectedCategory === category) {
-                // 再点一次，取消选择
-                selectedCategory = "";
-            } else {
-                selectedCategory = category;
-            }
+    document.querySelectorAll(".category-button").forEach(btn=>{
+        btn.onclick = function(){
+            const cat = this.dataset.category;
+            selectedCategory = (selectedCategory === cat ? "" : cat);
             updateCategoryButtonStyles();
-        });
+        };
     });
 }
-
 function updateCategoryButtonStyles() {
-    const buttons = document.querySelectorAll(".category-button");
-    buttons.forEach(function(btn) {
-        const category = btn.getAttribute("data-category");
-        if (category === selectedCategory) {
-            btn.classList.add("selected");
-        } else {
-            btn.classList.remove("selected");
-        }
+    document.querySelectorAll(".category-button").forEach(btn=>{
+        btn.classList.toggle("selected", btn.dataset.category === selectedCategory);
     });
 }
 
-// ===================== 主功能：添加 / 删除 / 渲染 =====================
-
-// 添加记录
+// ===================== 主逻辑 =====================
 function addRecord() {
-    const dateInput = document.getElementById("date");
-    const amountInput = document.getElementById("amount");
+    const isoDate = document.getElementById("date").value;
+    const raw = document.getElementById("amount").value;
 
-    if (!dateInput || !amountInput) {
-        alert("页面还没加载好，请刷新后重试");
-        return;
-    }
+    if (!isoDate) return alert("请选择日期");
+    if (!raw) return alert("请输入金额");
 
-    const isoDate = dateInput.value; // yyyy-MM-dd
-    const amountRaw = amountInput.value;
+    const value = raw.replace(",", ".");
+    const num = parseFloat(value);
+    if (isNaN(num)) return alert("金额格式不正确，例如 12,50");
 
-    if (!isoDate) {
-        alert("请选择日期");
-        return;
-    }
-
-    if (!amountRaw) {
-        alert("请填写金额");
-        return;
-    }
-
-    // 兼容逗号和点（12,50 或 12.50）
-    const normalized = amountRaw.replace(",", ".");
-    const amountNumber = parseFloat(normalized);
-    if (isNaN(amountNumber)) {
-        alert("请填写正确的金额（数字），例如 12,50");
-        return;
-    }
-
+    const amount = -Math.abs(num);
     const category = selectedCategory || "未分类";
-    const amount = -Math.abs(amountNumber); // 统一存为负数
 
-    const records = loadRecords();
-    records.unshift({
-        isoDate: isoDate,
-        amount: amount,
-        category: category
-    });
-    saveRecords(records);
-
+    const list = loadRecords();
+    list.unshift({ isoDate, amount, category });
+    saveRecords(list);
     render();
-
-    // 清空金额输入（日期和分类保持）
-    amountInput.value = "";
+    document.getElementById("amount").value = "";
 }
 
-// 删除记录（根据 index）
-function deleteRecord(index) {
-    const records = loadRecords();
-    if (index < 0 || index >= records.length) return;
-    records.splice(index, 1);
-    saveRecords(records);
+function deleteRecord(i) {
+    const r = loadRecords();
+    r.splice(i, 1);
+    saveRecords(r);
     render();
 }
 
-// 渲染表格
 function render() {
-    const records = loadRecords();
+    const r = loadRecords();
     const tbody = document.querySelector("#recordsTable tbody");
-    if (!tbody) return;
-
     tbody.innerHTML = "";
 
-    for (let i = 0; i < records.length; i++) {
-        const r = records[i];
+    r.forEach((item, i)=>{
         const tr = document.createElement("tr");
 
-        // 日期
-        const tdDate = document.createElement("td");
-        tdDate.textContent = formatGermanDate(r.isoDate);
-        tr.appendChild(tdDate);
-
-        // 金额
-        const tdAmount = document.createElement("td");
-        tdAmount.textContent = r.amount.toFixed(2);
-        tr.appendChild(tdAmount);
-
-        // 分类
-        const tdCategory = document.createElement("td");
-        tdCategory.textContent = r.category;
-        tr.appendChild(tdCategory);
-
-        // 删除按钮
-        const tdDel = document.createElement("td");
-        const btn = document.createElement("button");
-        btn.textContent = "删除";
-        btn.className = "delete-button";
-        btn.onclick = (function(idx) {
-            return function() {
-                deleteRecord(idx);
-            };
-        })(i);
-        tdDel.appendChild(btn);
-        tr.appendChild(tdDel);
-
+        tr.innerHTML = `
+            <td>${formatGermanDate(item.isoDate)}</td>
+            <td>${item.amount.toFixed(2)}</td>
+            <td>${item.category}</td>
+            <td><button class="delete-button">删除</button></td>
+        `;
+        tr.querySelector("button").onclick = ()=>deleteRecord(i);
         tbody.appendChild(tr);
-    }
+    });
 }
 
-// ===================== 导出 CSV =====================
-
-// 导出 CSV：日期 / 月份(数字) / 金额 / 花费种类
+// ===================== 导出 CSV + 打开分享菜单 =====================
 function exportCSV() {
     const records = loadRecords();
     if (records.length === 0) {
@@ -321,34 +190,45 @@ function exportCSV() {
 
     let csv = "日期,月份,金额 (€),花费种类\n";
 
-    for (let i = 0; i < records.length; i++) {
-        const r = records[i];
-        const germanDate = formatGermanDate(r.isoDate);  // dd-MM-yyyy
-        const parts = r.isoDate.split("-");              // [yyyy, MM, dd]
-        let month = "";
-        if (parts.length === 3) {
-            month = String(parseInt(parts[1], 10)); // 去掉前导 0，例如 "01" → "1"
-        }
+    records.forEach(r=>{
+        const gDate = formatGermanDate(r.isoDate);
+        const month = parseInt(r.isoDate.split("-")[1], 10);
+        const cat = r.category.replace(/"/g,'""');
 
-        const categorySafe = String(r.category).replace(/"/g, '""');
+        csv += `"${gDate}","${month}","${r.amount}","${cat}"\n`;
+    });
 
-        csv += "\"" + germanDate + "\"," +
-               "\"" + month + "\"," +
-               "\"" + r.amount + "\"," +
-               "\"" + categorySafe + "\"\n";
+    const blob = new Blob([csv], {type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+
+    // ----- iPhone Safari 自动打开 Share Sheet -----
+    if (navigator.share) {
+        const file = new File([blob], "cash_records.csv", { type: "text/csv" });
+
+        navigator.share({
+            title: "日常花费记录",
+            text: "导出的 CSV 文件",
+            files: [file]
+        })
+        .catch(err=>{
+            console.log("Share 失败，使用下载方式", err);
+            downloadFallback(url);
+        });
+    } else {
+        downloadFallback(url);
     }
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "cash_records.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 }
 
-// ===================== 初始化 =====================
-window.addEventListener("DOMContentLoaded", function() {
+function downloadFallback(url){
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cash_records.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+window.addEventListener("DOMContentLoaded", ()=>{
     setToday();
     initCategoryButtons();
     render();
