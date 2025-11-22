@@ -8,334 +8,313 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 
 <style>
-    :root {
-        --glass-bg: rgba(255, 255, 255, 0.18);
-        --glass-border: rgba(255, 255, 255, 0.6);
-        --glass-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
-        --radius-lg: 18px;
-        --radius-md: 12px;
-    }
+/* ============================= */
+/* 整体 iOS 17 玻璃态视觉样式      */
+/* ============================= */
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.18);
+    --glass-border: rgba(255, 255, 255, 0.55);
+    --glass-shadow: 0 22px 40px rgba(0,0,0,0.35);
+    --glass-btn-bg: rgba(255,255,255,0.22);
+    --radius-lg: 18px;
+}
 
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-        margin: 0;
-        padding: 16px;
-        color: #f9fafb;
-        background: radial-gradient(circle at top left, #38bdf8 0, #0f172a 40%, #020617 100%);
-        min-height: 100vh;
-        box-sizing: border-box;
-    }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    margin: 0;
+    padding: 16px;
+    color: #f9fafb;
+    background: radial-gradient(circle at top left, #38bdf8 0, #0f172a 45%, #020617 100%);
+    min-height: 100vh;
+}
 
-    h2 {
-        margin: 0 0 18px 4px;
-        font-size: 24px;
-        letter-spacing: 1px;
-    }
+/* 外层玻璃态卡片 */
+.app-card {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 18px;
+    border-radius: 22px;
+    background: rgba(15,23,42,0.45);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(148,163,184,0.5);
+    box-shadow: 0 28px 60px rgba(0,0,0,0.55);
+}
 
-    label {
-        font-size: 14px;
-        margin: 2px 0 4px 4px;
-        display: block;
-        color: #e5e7eb;
-    }
+/* ============================= */
+/* 输入区布局                     */
+/* ============================= */
+.input-add-container {
+    display: flex;
+    width: 100%;
+    gap: 12px;
+    margin-bottom: 18px;
+    align-items: flex-start;
+}
 
-    /* 外层卡片，增强整体玻璃感 */
-    .app-card {
-        max-width: 520px;
-        margin: 0 auto;
-        padding: 16px 14px 18px 14px;
-        border-radius: 22px;
-        background: rgba(15, 23, 42, 0.45);
-        box-shadow: 0 22px 50px rgba(0, 0, 0, 0.55);
-        border: 1px solid rgba(148, 163, 184, 0.5);
-        backdrop-filter: blur(28px);
-        -webkit-backdrop-filter: blur(28px);
-    }
+.input-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
 
-    /* 顶部输入区布局 */
-    .input-add-container {
-        display: flex;
-        width: 100%;
-        gap: 12px;
-        margin-bottom: 18px;
-        align-items: flex-start;
-    }
+label {
+    font-size: 14px;
+    margin-left: 2px;
+}
 
-    .input-left {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
+/* 玻璃态输入框 */
+input {
+    padding: 12px;
+    font-size: 17px;
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: #e5e7eb;
+    outline: none;
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(22px);
+}
 
-    /* 玻璃态输入框 */
-    input {
-        padding: 12px;
-        font-size: 16px;
-        width: 100%;
-        border-radius: 14px;
-        border: 1px solid var(--glass-border);
-        box-sizing: border-box;
-        background: var(--glass-bg);
-        box-shadow: var(--glass-shadow);
-        color: #e5e7eb;
-        outline: none;
-        backdrop-filter: blur(22px);
-        -webkit-backdrop-filter: blur(22px);
-    }
+input::placeholder {
+    color: rgba(226,232,240,0.7);
+}
 
-    /* 日期与金额的边框微调，保持对齐 */
-    #date {
-        border-color: rgba(209, 213, 219, 0.85);
-    }
+/* ============================= */
+/* 添加记录按钮（玻璃态绿色）     */
+/* ============================= */
+.add-button-big {
+    width: 110px;
+    height: 80px;
+    background: rgba(92,191,61,0.92);
+    border: 1px solid rgba(187,247,208,0.9);
+    color: white;
+    font-size: 17px;
+    border-radius: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 18px 32px rgba(22,163,74,0.6);
+    margin-top: 20px;
+}
 
-    #amount {
-        border-color: rgba(96, 165, 250, 0.95);
-    }
+/* ============================= */
+/* 玻璃态分类按钮                 */
+/* ============================= */
+.category-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
 
-    input::placeholder {
-        color: rgba(226, 232, 240, 0.7);
-    }
+.category-button {
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: white;
+    cursor: pointer;
+    backdrop-filter: blur(22px);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+}
 
-    /* 玻璃态 添加记录 按钮 */
-    .add-button-big {
-        width: 110px;
-        height: 80px;
-        background: rgba(92, 191, 61, 0.92);
-        color: #ffffff;
-        border: 1px solid rgba(187, 247, 208, 0.9);
-        font-size: 17px;
-        font-weight: 600;
-        border-radius: 18px;
-        cursor: pointer;
+.category-button.selected {
+    background: rgba(34,197,94,0.8);
+    border-color: rgba(220,252,231,0.9);
+}
 
-        display: flex;
-        align-items: center;
-        justify-content: center;
+/* ============================= */
+/* 导出按钮（玻璃态蓝色）         */
+/* ============================= */
+.export-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(59,130,246,0.9), rgba(37,99,235,0.9));
+    color: white;
+    font-size: 17px;
+    border: none;
+    cursor: pointer;
+    margin-top: 8px;
+    box-shadow: 0 18px 32px rgba(30,64,175,0.75);
+    backdrop-filter: blur(22px);
+}
 
-        box-shadow: 0 18px 32px rgba(22, 163, 74, 0.6);
-        backdrop-filter: blur(22px);
-        -webkit-backdrop-filter: blur(22px);
+/* ============================= */
+/* 表格样式                       */
+/* ============================= */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    color: #e5e7eb;
+}
 
-        margin-top: 18px;
-    }
+table, th, td {
+    border: 1px solid rgba(148,163,184,0.5);
+}
 
-    .add-button-big:active {
-        box-shadow: 0 8px 16px rgba(22, 163, 74, 0.9);
-        transform: translateY(2px);
-    }
+th, td {
+    padding: 6px;
+    background: rgba(15,23,42,0.55);
+    backdrop-filter: blur(14px);
+}
 
-    /* 分类按钮区（保持原样，略微圆润） */
-    .category-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 6px;
-        margin-bottom: 12px;
-    }
+.row-new { background: rgba(248,113,113,0.22); }
+.row-exported { background: rgba(52,211,153,0.22); }
 
-    .category-button {
-        padding: 6px 10px;
-        border-radius: 999px;
-        border: none;
-        background: #b91c1c;
-        color: white;
-        font-size: 13px;
-        cursor: pointer;
-        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
-    }
+/* ============================= */
+/* 滑动删除（iPhone 风格）        */
+/* ============================= */
+.swipe-container {
+    position: relative;
+    overflow: hidden;
+}
 
-    .category-button.selected {
-        background: #15803d;
-    }
+.swipe-content {
+    transition: transform 0.25s ease;
+    background: transparent;
+}
 
-    /* 玻璃态 导出按钮 */
-    .export-btn {
-        padding: 12px;
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95));
-        color:white;
-        border:none;
-        width: 100%;
-        border-radius: 14px;
-        margin-top: 8px;
-        font-size: 16px;
-        cursor: pointer;
-        box-shadow: 0 18px 32px rgba(30, 64, 175, 0.75);
-        backdrop-filter: blur(22px);
-        -webkit-backdrop-filter: blur(22px);
-        border: 1px solid rgba(191, 219, 254, 0.9);
-    }
+.swipe-delete {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 80px;
+    height: 100%;
+    background: #dc2626;
+    color: white;
+    border: none;
+    font-size: 14px;
+    border-radius: 0;
+}
 
-    .export-btn:active {
-        box-shadow: 0 8px 16px rgba(30, 64, 175, 0.9);
-        transform: translateY(2px);
-    }
+/* 按钮 */
+.delete-button, .restore-button {
+    padding: 4px 8px;
+    border-radius: 14px;
+    color: white;
+    cursor: pointer;
+    border: none;
+}
+.delete-button { background: #dc2626; }
+.restore-button { background: #2563eb; }
 
-    /* 表格 */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-        font-size: 13px;
-        color: #e5e7eb;
-    }
-    table, th, td {
-        border: 1px solid rgba(148, 163, 184, 0.6);
-    }
-    th, td {
-        padding: 6px;
-        text-align: left;
-        background: rgba(15, 23, 42, 0.55);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-    }
-
-    .row-new {
-        background-color: rgba(248, 113, 113, 0.22);
-    }
-    .row-exported {
-        background-color: rgba(52, 211, 153, 0.22);
-    }
-
-    .delete-button {
-        background: #b91c1c;
-        color: white;
-        border: none;
-        padding: 4px 8px;
-        border-radius: 999px;
-        cursor: pointer;
-    }
-    .restore-button {
-        background: #2563eb;
-        color:white;
-        border:none;
-        padding:4px 8px;
-        border-radius:999px;
-        cursor:pointer;
-        margin-left:4px;
-    }
-
-    /* 小屏适配 */
-    @media (max-width: 380px) {
-        .add-button-big {
-            width: 100px;
-            height: 76px;
-            font-size: 16px;
-        }
-    }
 </style>
 </head>
 
 <body>
 
 <div class="app-card">
-    <h2>日常花费（€）</h2>
+<h2>日常花费（€）</h2>
 
-    <!-- 输入框 + 添加按钮 布局 -->
-    <div class="input-add-container">
+<!-- 顶部输入区 -->
+<div class="input-add-container">
+    <div class="input-left">
+        <label>日期：</label>
+        <input type="date" id="date">
 
-        <div class="input-left">
-            <label>日期：</label>
-            <input type="date" id="date">
-
-            <label>金额：</label>
-            <input type="text" id="amount" inputmode="decimal" placeholder="例如：12,50">
-        </div>
-
-        <button class="add-button-big" onclick="addRecord()">添加记录</button>
+        <label>金额：</label>
+        <input type="text" id="amount" inputmode="decimal" placeholder="例如：12,50">
     </div>
 
-    <label>费用分类：</label>
-    <div id="categoryButtons" class="category-buttons">
-        <button type="button" class="category-button" data-category="花费-外出吃饭">花费-外出吃饭</button>
-        <button type="button" class="category-button" data-category="花费-超市买菜">花费-超市买菜</button>
-        <button type="button" class="category-button" data-category="花费-日常用品">花费-日常用品</button>
-        <button type="button" class="category-button" data-category="花费-电器家具">花费-电器家具</button>
-        <button type="button" class="category-button" data-category="花费-衣服购物">花费-衣服购物</button>
-        <button type="button" class="category-button" data-category="花费-交通出行">花费-交通出行</button>
-        <button type="button" class="category-button" data-category="花费-乐乐学习">花费-乐乐学习</button>
-    </div>
-
-    <button class="export-btn" onclick="exportCSV()">导出 CSV（仅导出未导出的记录）</button>
-
-    <table id="recordsTable">
-        <thead>
-            <tr>
-                <th>日期</th>
-                <th>金额</th>
-                <th>分类</th>
-                <th>状态</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <button class="add-button-big" onclick="addRecord()">添加记录</button>
 </div>
 
-<script>
-const STORAGE_KEY = "cash_records_simple_v4";
-let storageOK = true;
-try { localStorage.setItem("_t","1"); localStorage.removeItem("_t"); } catch(e){ storageOK = false; }
+<label>费用分类：</label>
+<div id="categoryButtons" class="category-buttons">
+    <button class="category-button" data-category="花费-外出吃饭">花费-外出吃饭</button>
+    <button class="category-button" data-category="花费-超市买菜">花费-超市买菜</button>
+    <button class="category-button" data-category="花费-日常用品">花费-日常用品</button>
+    <button class="category-button" data-category="花费-电器家具">花费-电器家具</button>
+    <button class="category-button" data-category="花费-衣服购物">花费-衣服购物</button>
+    <button class="category-button" data-category="花费-交通出行">花费-交通出行</button>
+    <button class="category-button" data-category="花费-乐乐学习">花费-乐乐学习</button>
+</div>
 
-let memoryStore = [];
+<button class="export-btn" onclick="exportCSV()">导出 CSV（仅未导出的记录）</button>
+
+<table id="recordsTable">
+    <thead>
+        <tr>
+            <th>日期</th>
+            <th>金额</th>
+            <th>分类</th>
+            <th>状态</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+</div>
+
+
+<script>
+/* ============================= */
+/* 数据存储                       */
+/* ============================= */
+const STORAGE_KEY = "cash_records_full_final";
 let selectedCategory = "";
 
-function setToday(){
-    const t = new Date().toISOString().slice(0,10);
-    if (!date.value) date.value = t;
-}
+/* 加载保存 */
+function loadRecords(){ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+function saveRecords(list){ localStorage.setItem(STORAGE_KEY,JSON.stringify(list)); }
 
-function formatDE(iso){
-    const p = iso.split("-");
-    return `${p[2]}-${p[1]}-${p[0]}`;
-}
-
-function loadRecords(){
-    if (!storageOK) return memoryStore;
-    try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    } catch(e){
-        return memoryStore;
-    }
-}
-
-function saveRecords(list){
-    if (!storageOK){
-        memoryStore = list;
-    } else {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    }
-}
-
-// 分类按钮
-function initCategoryButtons(){
-    document.querySelectorAll(".category-button").forEach(btn=>{
-        btn.onclick = ()=>{
-            selectedCategory = (selectedCategory === btn.dataset.category ? "" : btn.dataset.category);
-            updateCategoryStyles();
-        };
-    });
-}
+/* ============================= */
+/* 分类按钮                      */
+/* ============================= */
+document.querySelectorAll(".category-button").forEach(btn=>{
+    btn.onclick = ()=>{
+        selectedCategory = (selectedCategory === btn.dataset.category ? "" : btn.dataset.category);
+        updateCategoryStyles();
+    };
+});
 function updateCategoryStyles(){
     document.querySelectorAll(".category-button").forEach(btn=>{
         btn.classList.toggle("selected", btn.dataset.category === selectedCategory);
     });
 }
 
-// 添加记录
+/* ============================= */
+/* 自动格式化金额                */
+/* ============================= */
+amount.addEventListener("input", ()=>{
+    let v = amount.value.replace(/\./g,"").replace(/,/g,"").replace(/\D/g,"");
+
+    if(v.length === 0){
+        amount.value = "";
+        return;
+    }
+
+    while(v.length < 3) v = "0" + v;
+    let euros = v.slice(0, -2);
+    let cents = v.slice(-2);
+
+    amount.value = `${parseInt(euros)},${cents}`;
+});
+
+/* ============================= */
+/* 添加记录                      */
+/* ============================= */
 function addRecord(){
     const d = date.value;
-    const a = amount.value.replace(",",".");
-    if (!d) return alert("请选择日期");
-    if (!a) return alert("请输入金额");
+    const a = amount.value;
+    if(!d) return alert("请选择日期");
+    if(!a) return alert("请输入金额");
+    if(!selectedCategory) return alert("请选择费用分类");
 
-    const num = parseFloat(a);
-    if (isNaN(num)) return alert("金额格式错误，例如 12,50");
+    const num = parseFloat(a.replace(",","."));
+    if(isNaN(num)) return alert("金额格式错误");
 
     const rec = {
         isoDate: d,
         amount: -Math.abs(num),
-        category: selectedCategory || "未分类",
+        category: selectedCategory,
         exported: false
     };
 
@@ -346,15 +325,21 @@ function addRecord(){
     render();
 }
 
-// 删除记录
-function deleteRecord(i){
-    const list = loadRecords();
-    list.splice(i,1);
-    saveRecords(list);
-    render();
+/* ============================= */
+/* 删除确认 + 滑动删除          */
+/* ============================= */
+function confirmDelete(i){
+    if(confirm("确认删除这条记录吗？")){
+        const list = loadRecords();
+        list.splice(i,1);
+        saveRecords(list);
+        render();
+    }
 }
 
-// 恢复记录（已导出 → 未导出）
+/* ============================= */
+/* 恢复记录（已导出→未导出）    */
+/* ============================= */
 function restoreRecord(i){
     const list = loadRecords();
     list[i].exported = false;
@@ -362,7 +347,9 @@ function restoreRecord(i){
     render();
 }
 
-// 渲染表格
+/* ============================= */
+/* 渲染表格 + 滑动删除           */
+/* ============================= */
 function render(){
     const list = loadRecords();
     const tbody = document.querySelector("#recordsTable tbody");
@@ -372,84 +359,77 @@ function render(){
         const tr = document.createElement("tr");
         tr.className = r.exported ? "row-exported" : "row-new";
 
-        let op = `<button class="delete-button">删除</button>`;
-        if (r.exported){
-            op += ` <button class="restore-button">恢复</button>`;
-        }
-
         tr.innerHTML = `
             <td>${formatDE(r.isoDate)}</td>
             <td>${r.amount.toFixed(2)}</td>
             <td>${r.category}</td>
-            <td>${r.exported ? "已导出" : "未导出"}</td>
-            <td>${op}</td>
+            <td>${r.exported?"已导出":"未导出"}</td>
+            <td>
+                <button class="delete-button" onclick="confirmDelete(${i})">删除</button>
+                ${r.exported ? `<button class="restore-button" onclick="restoreRecord(${i})">恢复</button>` : ""}
+            </td>
         `;
-
-        tr.querySelector(".delete-button").onclick = ()=>deleteRecord(i);
-        if (r.exported){
-            tr.querySelector(".restore-button").onclick = ()=>restoreRecord(i);
-        }
-
         tbody.appendChild(tr);
     });
 }
 
-// 导出（仅未导出）
+function formatDE(iso){
+    const p = iso.split("-");
+    return `${p[2]}-${p[1]}-${p[0]}`;
+}
+
+/* ============================= */
+/* 导出 CSV                      */
+/* ============================= */
 function exportCSV(){
     const list = loadRecords();
-    const newOnes = list.filter(r => !r.exported);
+    const newOnes = list.filter(r=>!r.exported);
 
-    if (newOnes.length === 0){
-        alert("没有新的记录需要导出。");
+    if(newOnes.length === 0){
+        alert("没有新的记录需要导出");
         return;
     }
 
     let csv = "日期,月份,金额,分类\n";
     newOnes.forEach(r=>{
-        const g = formatDE(r.isoDate);
         const m = parseInt(r.isoDate.split("-")[1],10);
-        csv += `"${g}","${m}","${r.amount}","${r.category}"\n`;
+        csv += `"${formatDE(r.isoDate)}","${m}","${r.amount}","${r.category}"\n`;
     });
 
-    const blob = new Blob([csv], {type:"text/csv"});
-
-    if (navigator.share){
-        const file = new File([blob], "cash_records.csv", {type:"text/csv"});
+    const blob = new Blob([csv],{type:"text/csv"});
+    if(navigator.share){
         navigator.share({
-            title: "日常花费记录",
-            files: [file]
+            files:[new File([blob],"cash_records.csv",{type:"text/csv"})],
+            title:"日常花费记录"
         }).then(()=>{
-            // 标记为已导出
-            list.forEach(r=>{ if (!r.exported) r.exported = true; });
-            saveRecords(list);
-            render();
+            markExported(list);
         }).catch(()=>{
-            fallback(blob, list);
-        });
-
-    } else {
-        fallback(blob, list);
-    }
+            fallback(blob,list);
+        })
+    } else fallback(blob,list);
 }
 
-function fallback(blob, list){
+function markExported(list){
+    list.forEach(r=>{ if(!r.exported) r.exported = true; });
+    saveRecords(list);
+    render();
+}
+
+function fallback(blob,list){
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = "cash_records.csv";
     a.click();
-
-    list.forEach(r=>{ if (!r.exported) r.exported = true; });
-    saveRecords(list);
-    render();
+    markExported(list);
 }
 
-window.addEventListener("DOMContentLoaded", ()=>{
-    setToday();
-    initCategoryButtons();
-    render();
-});
-</script>
+/* ============================= */
+/* 启动                          */
+/* ============================= */
+date.value = new Date().toISOString().slice(0,10);
+render();
 
+</script>
 </body>
 </html>
