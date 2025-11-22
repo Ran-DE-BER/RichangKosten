@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="apple-touch-icon" href="icon-512.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
 <style>
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
@@ -28,6 +29,15 @@
     }
     table, th, td { border: 1px solid #ccc; }
     th, td { padding: 6px; text-align: left; }
+
+    /* 新增：记录颜色 */
+    .row-new {
+        background-color: #ffe5e5;   /* 浅红色：未导出 */
+    }
+    .row-exported {
+        background-color: #e5ffe5;   /* 浅绿色：已导出 */
+    }
+
     .delete-button {
         background: #cc0000; color: white; border: none;
         padding: 4px 8px; border-radius: 4px; cursor: pointer;
@@ -50,8 +60,8 @@
 <label>日期：</label>
 <input type="date" id="date">
 
-<label>金额（欧元，使用逗号作为小数点，例如：12,50）：</label>
-<input type="text" id="amount" placeholder="例如：12,50">
+<label>金额（欧元，逗号为小数点，例如 12,50）：</label>
+<input type="text" id="amount" inputmode="decimal" placeholder="例如：12,50">
 
 <label>费用分类：</label>
 <div id="categoryButtons" class="category-buttons">
@@ -65,14 +75,15 @@
 </div>
 
 <button type="button" onclick="addRecord()">添加记录</button>
-<button type="button" onclick="exportCSV()">导出 CSV（分享 / 保存）</button>
+<button type="button" onclick="exportCSV()">导出 CSV（仅导出未导出记录）</button>
 
 <table id="recordsTable">
     <thead>
         <tr>
             <th>日期 (dd-MM-yyyy)</th>
-            <th>金额 (€，负数)</th>
+            <th>金额 (€)</th>
             <th>分类</th>
+            <th>状态</th>
             <th>操作</th>
         </tr>
     </thead>
@@ -80,154 +91,170 @@
 </table>
 
 <script>
-// ===================== 保存设置 =====================
-const STORAGE_KEY = "cash_records_simple";
+const STORAGE_KEY = "cash_records_simple_v2";
 
 let storageAvailable = true;
-try { localStorage.setItem("__test__", "1"); localStorage.removeItem("__test__"); }
+try { localStorage.setItem("__t__", "1"); localStorage.removeItem("__t__"); }
 catch(e){ storageAvailable = false; }
 
-let inMemoryRecords = [];
-
+let inMemory = [];
 let selectedCategory = "";
 
-// ===================== 工具 =====================
+// 工具函数
 function setToday() {
-    const t = new Date().toISOString().slice(0, 10);
-    const d = document.getElementById("date");
-    if (d && !d.value) d.value = t;
+    const today = new Date().toISOString().slice(0, 10);
+    if (!document.getElementById("date").value)
+        document.getElementById("date").value = today;
 }
 
 function formatGermanDate(iso) {
     const p = iso.split("-");
-    if (p.length !== 3) return iso;
     return `${p[2]}-${p[1]}-${p[0]}`;
 }
 
 function loadRecords() {
-    if (!storageAvailable) return inMemoryRecords;
+    if (!storageAvailable) return inMemory;
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-    catch(e){ return inMemoryRecords; }
+    catch(e){ return inMemory; }
 }
 
 function saveRecords(r) {
-    if (!storageAvailable) { inMemoryRecords = r; return; }
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(r)); }
-    catch(e){ inMemoryRecords = r; }
+    if (!storageAvailable) { inMemory = r; return; }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(r));
 }
 
-// ===================== 分类按钮 =====================
+// 分类按钮
 function initCategoryButtons() {
     document.querySelectorAll(".category-button").forEach(btn=>{
         btn.onclick = function(){
-            const cat = this.dataset.category;
-            selectedCategory = (selectedCategory === cat ? "" : cat);
+            selectedCategory = (selectedCategory === btn.dataset.category ? "" : btn.dataset.category);
             updateCategoryButtonStyles();
         };
     });
 }
+
 function updateCategoryButtonStyles() {
     document.querySelectorAll(".category-button").forEach(btn=>{
         btn.classList.toggle("selected", btn.dataset.category === selectedCategory);
     });
 }
 
-// ===================== 主逻辑 =====================
+// 添加记录
 function addRecord() {
-    const isoDate = document.getElementById("date").value;
-    const raw = document.getElementById("amount").value;
-
+    const isoDate = date.value;
+    let raw = amount.value;
     if (!isoDate) return alert("请选择日期");
     if (!raw) return alert("请输入金额");
 
-    const value = raw.replace(",", ".");
-    const num = parseFloat(value);
-    if (isNaN(num)) return alert("金额格式不正确，例如 12,50");
+    raw = raw.replace(",", ".");
+    const num = parseFloat(raw);
+    if (isNaN(num)) return alert("格式错误，例如 12,50");
 
-    const amount = -Math.abs(num);
     const category = selectedCategory || "未分类";
+    const amountValue = -Math.abs(num);
 
-    const list = loadRecords();
-    list.unshift({ isoDate, amount, category });
-    saveRecords(list);
+    const records = loadRecords();
+    records.unshift({
+        isoDate,
+        amount: amountValue,
+        category,
+        exported: false       // 新增字段：未导出
+    });
+
+    saveRecords(records);
+    amount.value = "";
     render();
-    document.getElementById("amount").value = "";
 }
 
+// 删除
 function deleteRecord(i) {
     const r = loadRecords();
-    r.splice(i, 1);
+    r.splice(i,1);
     saveRecords(r);
     render();
 }
 
+// 渲染
 function render() {
     const r = loadRecords();
     const tbody = document.querySelector("#recordsTable tbody");
     tbody.innerHTML = "";
 
-    r.forEach((item, i)=>{
+    r.forEach((item, i) => {
         const tr = document.createElement("tr");
+
+        tr.className = item.exported ? "row-exported" : "row-new";
 
         tr.innerHTML = `
             <td>${formatGermanDate(item.isoDate)}</td>
             <td>${item.amount.toFixed(2)}</td>
             <td>${item.category}</td>
+            <td>${item.exported ? "已导出" : "未导出"}</td>
             <td><button class="delete-button">删除</button></td>
         `;
-        tr.querySelector("button").onclick = ()=>deleteRecord(i);
+
+        tr.querySelector("button").onclick = () => deleteRecord(i);
         tbody.appendChild(tr);
     });
 }
 
-// ===================== 导出 CSV + 打开分享菜单 =====================
+// 导出 CSV：只导出未导出的
 function exportCSV() {
-    const records = loadRecords();
-    if (records.length === 0) {
-        alert("没有记录可以导出！");
+    const all = loadRecords();
+    const newOnes = all.filter(r => !r.exported);
+
+    if (newOnes.length === 0) {
+        alert("没有新的记录需要导出。");
         return;
     }
 
     let csv = "日期,月份,金额 (€),花费种类\n";
 
-    records.forEach(r=>{
-        const gDate = formatGermanDate(r.isoDate);
-        const month = parseInt(r.isoDate.split("-")[1], 10);
-        const cat = r.category.replace(/"/g,'""');
-
-        csv += `"${gDate}","${month}","${r.amount}","${cat}"\n`;
+    newOnes.forEach(r=>{
+        const g = formatGermanDate(r.isoDate);
+        const m = parseInt(r.isoDate.split("-")[1],10);
+        csv += `"${g}","${m}","${r.amount}","${r.category}"\n`;
     });
 
-    const blob = new Blob([csv], {type:"text/csv"});
-    const url = URL.createObjectURL(blob);
+    const blob = new Blob([csv], { type:"text/csv" });
 
-    // ----- iPhone Safari 自动打开 Share Sheet -----
+    // iPhone Safari: share sheet
     if (navigator.share) {
-        const file = new File([blob], "cash_records.csv", { type: "text/csv" });
+        const file = new File([blob], "cash_records.csv", { type:"text/csv" });
 
         navigator.share({
             title: "日常花费记录",
-            text: "导出的 CSV 文件",
             files: [file]
         })
+        .then(() => {
+            // 导出成功 → 所有新记录变绿色
+            all.forEach(r => { if (!r.exported) r.exported = true; });
+            saveRecords(all);
+            render();
+        })
         .catch(err=>{
-            console.log("Share 失败，使用下载方式", err);
-            downloadFallback(url);
+            console.log("Share failed:", err);
+            fallbackDownload(blob, all);
         });
+
     } else {
-        downloadFallback(url);
+        fallbackDownload(blob, all);
     }
 }
 
-function downloadFallback(url){
+function fallbackDownload(blob, all){
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = "cash_records.csv";
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+
+    all.forEach(r => { if (!r.exported) r.exported = true; });
+    saveRecords(all);
+    render();
 }
 
+// 初始化
 window.addEventListener("DOMContentLoaded", ()=>{
     setToday();
     initCategoryButtons();
