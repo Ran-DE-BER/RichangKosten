@@ -326,7 +326,7 @@ function addRecord(){
     };
 
     const list = loadRecords();
-    list.unshift(rec);
+    list.push(rec);
     saveRecords(list);
     amount.value = "";
     render();
