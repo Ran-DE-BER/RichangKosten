@@ -320,7 +320,7 @@ function addRecord(){
 
     const rec = {
         isoDate: d,
-        amount: -Math.abs(num),
+        amount: "-" + num.toFixed(2).replace(".", ","),
         category: selectedCategory,
         exported: false
     };
@@ -368,7 +368,7 @@ function render(){
 
         tr.innerHTML = `
             <td>${formatDE(r.isoDate)}</td>
-            <td>${r.amount.toFixed(2)}</td>
+            <td>${r.amount}</td>
             <td>${r.category}</td>
             <td>${r.exported?"已导出":"未导出"}</td>
             <td>
